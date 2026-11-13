@@ -5,7 +5,8 @@ import { collectComments } from '../parsers/typescript.ts';
 const SUPPRESS_RE = /(?:\/\/|\/\*|#|--)\s*patchsieve-ignore\b(.*)$/;
 // For JS/TS the text must start a genuine comment token.
 const COMMENT_RE = /^(?:\/\/|\/\*)\s*patchsieve-ignore\b(.*)$/;
-const SUPPRESS_VALID = /^\s+((?:PS\d{3})(?:\s*,\s*PS\d{3})*)\s+--\s+(\S.{2,}?)\s*(?:\*\/)?\s*$/;
+const SUPPRESS_VALID = /^\s+(PS\d{3}(?:\s*,\s*PS\d{3}){0,19})\s+--\s+(\S[^\n]{1,})$/;
+const MAX_LINE = 2000;
 const NEWLINE = /\r\n|\r|\n/;
 const STANDALONE = /^\s*(\/\/|\/\*|#|--)/;
 
@@ -29,8 +30,10 @@ export function parseSuppressions(text: string, sf?: ts.SourceFile): ParsedSuppr
   const invalid: { line: number; text: string }[] = [];
   const lines = text.split(NEWLINE);
   const handle = (line: number, rest: string, standalone: boolean, shown: string): void => {
-    const v = SUPPRESS_VALID.exec(rest);
-    if (!v) {
+    // Trim first (and drop a closing block-comment marker) so the pattern needs no trailing-whitespace backtracking.
+    const cleaned = rest.replace(/\*\/\s*$/, '').trimEnd();
+    const v = SUPPRESS_VALID.exec(cleaned);
+    if (!v || v[2]!.trim().length < 3) {
       invalid.push({ line, text: shown.trim().slice(0, 120) });
       return;
     }
@@ -45,12 +48,13 @@ export function parseSuppressions(text: string, sf?: ts.SourceFile): ParsedSuppr
   if (sf) {
     for (const c of collectComments(sf)) {
       const first = c.text.split(NEWLINE)[0]!;
+      if (first.length > MAX_LINE) continue; // bounded work on hostile input
       const m = COMMENT_RE.exec(first);
       if (m) handle(c.line, m[1]!, c.standalone, first);
     }
   } else {
     lines.forEach((l, i) => {
-      if (l.length > 2000) return;
+      if (l.length > MAX_LINE) return;
       const m = SUPPRESS_RE.exec(l);
       if (m) handle(i + 1, m[1]!, STANDALONE.test(l), l);
     });
