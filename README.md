@@ -32,6 +32,8 @@ Coding agents can generate large pull requests quickly. Reviewing them consisten
 
 ## Quick start (GitHub Action)
 
+Listed on the [GitHub Marketplace](https://github.com/marketplace/actions/patchsieve).
+
 Add `.github/workflows/patchsieve.yml`:
 
 ```yaml
@@ -132,7 +134,7 @@ More: [docs/limitations.md](docs/limitations.md).
 
 ## Roadmap
 
-Not available yet: Python, PHP, Laravel migrations, Go, Rust, deeper dependency analysis, framework-specific rules, opt-in PR comments, npm publication, GitHub Marketplace listing.
+Not available yet: Python, PHP, Laravel migrations, Go, Rust, deeper dependency analysis, framework-specific rules, opt-in PR comments, npm publication.
 
 ## Contributing
 

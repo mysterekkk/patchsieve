@@ -31,6 +31,8 @@ Agenty kodujące szybko generują duże PR-y. Ich spójna recenzja zajmuje czas,
 
 ## Szybki start (GitHub Action)
 
+Akcja jest na [GitHub Marketplace](https://github.com/marketplace/actions/patchsieve).
+
 Dodaj plik `.github/workflows/patchsieve.yml`:
 
 ```yaml
@@ -125,7 +127,7 @@ PatchSieve traktuje analizowaną zmianę jak dane. Czyta obiekty gita, odmawia p
 
 ## Roadmapa (jeszcze niedostępne)
 
-Python, PHP, migracje Laravel, Go, Rust, głębsza analiza zależności, reguły dla frameworków, opcjonalne komentarze w PR, publikacja w npm i w GitHub Marketplace.
+Python, PHP, migracje Laravel, Go, Rust, głębsza analiza zależności, reguły dla frameworków, opcjonalne komentarze w PR, publikacja w npm.
 
 ## Licencja i autor
 
