@@ -5,6 +5,7 @@ import { parseUnifiedDiff, unquote } from '../../src/core/diff.ts';
 import { summarize } from '../../src/core/findings.ts';
 import { main } from '../../src/cli/index.ts';
 import { toConsole, toMarkdown } from '../../src/reporters/index.ts';
+import { locateSectionKeys } from '../../src/parsers/json-locate.ts';
 import { sanitize } from '../../src/utils/text.ts';
 import { lines, run } from '../helpers.ts';
 import { makeRepo } from '../repo.ts';
@@ -77,12 +78,12 @@ describe('skipped files fail the gate', () => {
       repo.cleanup();
     }
   });
-  it('binary files and symlinks are benign skips', async () => {
-    const repo = makeRepo({ 'a.txt': 'x' }, { 'a.txt': 'x', 'src/bin.ts': 'a\u0000b' });
+  it('a source file made binary with NUL bytes is a blocking skip (cannot be used to hide code)', async () => {
+    const repo = makeRepo({ 'a.txt': 'x' }, { 'a.txt': 'x', 'src/bin.ts': 'a\u0000b', '.gitattributes': '*.ts binary\n' });
     try {
       const r = await analyze({ cwd: repo.dir, config: defaultConfig(), base: repo.base, head: repo.head });
-      expect(r.skipped).toEqual([{ path: 'src/bin.ts', reason: 'binary file', blocking: false }]);
-      expect(r.blockingSkips).toBe(0);
+      expect(r.skipped).toEqual([{ path: 'src/bin.ts', reason: 'binary', blocking: true }]);
+      expect(r.blockingSkips).toBe(1);
     } finally {
       repo.cleanup();
     }
@@ -109,6 +110,24 @@ describe('skipped files fail the gate', () => {
     } finally {
       repo.cleanup();
     }
+  });
+});
+
+describe('json key locator', () => {
+  const sections = ['dependencies'];
+  it('handles braces/colons/quotes inside strings and compact objects', () => {
+    const text = '{"name":"a}b","scripts":{"x":"echo \\"}\\" : y"},\n"dependencies":{"p":"1",\n"q":"{x}",\n"r":"2"}}';
+    const m = locateSectionKeys(text, sections).get('dependencies')!;
+    expect([...m.entries()]).toEqual([['p', 2], ['q', 3], ['r', 4]]);
+  });
+  it('uses the last occurrence of a duplicate key, like JSON.parse', () => {
+    const text = '{\n"dependencies": {\n"a": "1",\n"a": "*"\n}\n}';
+    expect(locateSectionKeys(text, sections).get('dependencies')!.get('a')).toBe(4);
+    expect(lines(run('PS103', 'package.json', text))).toEqual([4]);
+  });
+  it('a nested key named like a dependency elsewhere is not mistaken for one', () => {
+    const text = '{\n"config": {"dependencies": {"zzz": "*"}},\n"dependencies": {"a": "*"}\n}';
+    expect(lines(run('PS103', 'package.json', text))).toEqual([3]);
   });
 });
 

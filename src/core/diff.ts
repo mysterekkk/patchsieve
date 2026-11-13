@@ -114,7 +114,7 @@ export function getChanges(cwd: string, base: string, head: string): FileChange[
   assertSafeRef(head);
   // Three-dot semantics: diff from the merge base to head.
   const mergeBase = git(cwd, ['merge-base', base, head]).trim();
-  const out = git(cwd, ['-c', 'core.quotePath=false', 'diff', '--unified=0', '-M', '--no-color', '--no-ext-diff', mergeBase, head]);
+  const out = git(cwd, ['-c', 'core.quotePath=false', 'diff', '--unified=0', '-M', '--no-color', '--no-ext-diff', '--no-textconv', '--text', mergeBase, head]);
   return parseUnifiedDiff(out);
 }
 

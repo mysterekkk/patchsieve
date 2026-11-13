@@ -51,7 +51,7 @@ export async function registryFindings(
     if (!('text' in r)) continue;
     let entries;
     try {
-      entries = readManifest(r.text).entries;
+      entries = readManifest(r.text, f.changed && f.changed.size ? Math.min(...f.changed) : 1).entries;
     } catch {
       continue;
     }

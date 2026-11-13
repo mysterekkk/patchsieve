@@ -36,7 +36,7 @@ export interface AnalysisResult {
 }
 
 /** Skips that are expected and harmless (not code we could have analyzed). */
-const BENIGN_SKIPS = new Set(['symlink', 'binary', 'binary file', 'submodule']);
+const BENIGN_SKIPS = new Set(['symlink', 'submodule']);
 
 function ruleApplies(r: Rule, path: string, lang: string | null): boolean {
   if (r.fileNames) return r.fileNames.includes(basename(path));
@@ -68,7 +68,8 @@ export async function analyze(opts: AnalyzeOptions): Promise<AnalysisResult> {
     for (const c of changes) {
       if (c.status === 'deleted') continue;
       if (c.binary) {
-        skipped.push({ path: c.path, reason: 'binary file', blocking: false });
+        // A "binary" source file (NUL bytes) is how someone would hide code from an analyzer: block unless it is a non-source file.
+        skipped.push({ path: c.path, reason: 'binary file', blocking: languageOf(c.path) !== null });
         continue;
       }
       // Paths from git are used verbatim (never rewritten), so odd file names still resolve to the right blob.
@@ -111,7 +112,7 @@ export async function analyze(opts: AnalyzeOptions): Promise<AnalysisResult> {
     const lang = languageOf(cand.path)!;
     const read = headSource.read(cand.path, config.scan.maxFileSize);
     if ('skip' in read) {
-      skipped.push({ path: cand.path, reason: read.skip, blocking: !BENIGN_SKIPS.has(read.skip) });
+      skipped.push({ path: cand.path, reason: read.skip, blocking: !BENIGN_SKIPS.has(read.skip) || read.skip === 'binary' });
       continue;
     }
     const text = read.text;

@@ -1,5 +1,6 @@
 import { parse as parseYaml } from 'yaml';
 import type { RawFinding, Rule, RuleContext } from '../../core/types.ts';
+import { locateSectionKeys } from '../../parsers/json-locate.ts';
 
 export const DEP_SECTIONS = ['dependencies', 'devDependencies', 'optionalDependencies'] as const;
 type Section = (typeof DEP_SECTIONS)[number];
@@ -17,49 +18,28 @@ function isObject(v: unknown): v is Json {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-/** Parse a manifest and locate each dependency's line (pretty-printed JSON; falls back to line 1). */
-export function readManifest(text: string): { entries: DepEntry[]; json: Json } {
+/**
+ * Parse a manifest and locate each dependency's line exactly (see parsers/json-locate.ts).
+ * `fallbackLine` is used only if a key cannot be located; callers pass a line that is part of the change,
+ * so an unlocated entry can never be silently dropped by the changed-lines filter.
+ */
+export function readManifest(text: string, fallbackLine = 1): { entries: DepEntry[]; json: Json } {
   const json: unknown = JSON.parse(text);
   if (!isObject(json)) throw new Error('package.json must contain an object');
-  const lines = text.split(/\r\n|\r|\n/);
+  const located = locateSectionKeys(text, DEP_SECTIONS);
   const entries: DepEntry[] = [];
   for (const section of DEP_SECTIONS) {
     const deps = json[section];
     if (!isObject(deps)) continue;
-    let inSection = false;
-    let sectionLine = 1;
-    const lineOf = new Map<string, number>();
-    lines.forEach((l, i) => {
-      if (!inSection) {
-        const open = new RegExp(`"${section}"\\s*:\\s*\\{`).exec(l);
-        if (open) {
-          sectionLine = i + 1;
-          // Entries may sit on the same line as the opening brace (inline objects).
-          const rest = l.slice(open.index + open[0].length);
-          for (const m of rest.matchAll(/"((?:[^"\\]|\\.)*)"\s*:/g)) lineOf.set(JSON.parse(`"${m[1]}"`) as string, i + 1);
-          inSection = !rest.includes('}');
-        }
-        return;
-      }
-      if (/^\s*\}/.test(l)) {
-        inSection = false;
-        return;
-      }
-      // Keys are the quoted strings followed by a colon; values (also quoted) are not followed by one.
-      for (const m of l.matchAll(/"((?:[^"\\]|\\.)*)"\s*:/g)) {
-        const key = JSON.parse(`"${m[1]}"`) as string;
-        if (!lineOf.has(key)) lineOf.set(key, i + 1);
-      }
-      if (l.includes('}')) inSection = false;
-    });
+    const lineOf = located.get(section)!;
     for (const [name, range] of Object.entries(deps)) {
       if (typeof range !== 'string') continue;
-      // Unknown position (unusual formatting): fall back to the section's line, never to line 1.
-      entries.push({ section, name, range, line: lineOf.get(name) ?? sectionLine });
+      entries.push({ section, name, range, line: lineOf.get(name) ?? fallbackLine });
     }
   }
   return { entries, json };
 }
+
 
 export function isRegistryRange(range: string): boolean {
   return !/^(workspace:|file:|link:|portal:|patch:|git\+|git:|github:|gitlab:|bitbucket:|https?:|npm:|[\w.-]+\/[\w.-]+(#.*)?$)/.test(range);
@@ -166,7 +146,8 @@ export function checkAgainstLock(lock: Lock, manifestPath: string, e: DepEntry):
 
 /** Dependencies added or whose range changed relative to base (all of them when there is no base). */
 function candidates(ctx: RuleContext): { entries: DepEntry[]; json: Json } {
-  const head = readManifest(ctx.file.text);
+  const changed = ctx.file.changedLines;
+  const head = readManifest(ctx.file.text, changed && changed.size ? Math.min(...changed) : 1);
   const baseText = ctx.readBaseFile(ctx.file.path);
   if (baseText === undefined || ctx.file.isNew) return head;
   let baseMap = new Map<string, string>();
