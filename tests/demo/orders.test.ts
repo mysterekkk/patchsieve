@@ -1,7 +1,6 @@
 import { expect, it } from 'vitest';
-import { syncOrders } from '../../src/demo/orders';
+import { calculateTotal } from '../../src/demo/orders.ts';
 
-it('syncs orders', async () => {
-  const result = await syncOrders(async () => {});
-  expect(result);
+it('sums items', () => {
+  expect(calculateTotal([1, 2, 3])).toBe(6);
 });
