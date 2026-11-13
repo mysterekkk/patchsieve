@@ -17,6 +17,6 @@ PatchSieve is a deterministic quality gate for pull requests: no LLM, no AI API 
 ```
 
 ## Honest limits
-Pattern-based evidence, not proof. JS/TS code rules; Prisma/PostgreSQL-style SQL migrations. No type information. Not published to npm or the Marketplace yet. See [docs/limitations.md](../limitations.md).
+Pattern-based evidence, not proof. JS/TS code rules; Prisma/PostgreSQL-style SQL migrations. No type information. Also available as `npx patchsieve` and on the GitHub Marketplace. See [docs/limitations.md](../limitations.md).
 
 Feedback and false-positive reports: GitHub Issues.
