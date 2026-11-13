@@ -14,4 +14,4 @@ jobs:
         with:
           fetch-depth: 0          # the merge base must be available
           persist-credentials: false
-      - uses: mysterekkk/patchsieve@v0.1.0
+      - uses: mysterekkk/patchsieve@v0.1.1

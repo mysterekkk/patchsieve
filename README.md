@@ -50,7 +50,7 @@ jobs:
         with:
           fetch-depth: 0          # needed to find the merge base
           persist-credentials: false
-      - uses: mysterekkk/patchsieve@v0.1.0
+      - uses: mysterekkk/patchsieve@v0.1.1
 ```
 
 Errors fail the check and appear as annotations plus a Job Summary; warnings are reported without failing. See [docs/github-actions.md](docs/github-actions.md).

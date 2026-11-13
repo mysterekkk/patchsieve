@@ -14,7 +14,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: mysterekkk/patchsieve@v0.1.0
+      - uses: mysterekkk/patchsieve@v0.1.1
 ```
 
 Why `fetch-depth: 0`: diff mode needs the merge base of the PR base and head.
@@ -40,7 +40,7 @@ permissions:
 steps:
   - uses: actions/checkout@v7
     with: { fetch-depth: 0, persist-credentials: false }
-  - uses: mysterekkk/patchsieve@v0.1.0
+  - uses: mysterekkk/patchsieve@v0.1.1
     id: ps
     continue-on-error: true
   - uses: github/codeql-action/upload-sarif@v4

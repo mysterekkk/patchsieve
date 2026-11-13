@@ -49,7 +49,7 @@ jobs:
         with:
           fetch-depth: 0          # potrzebne do znalezienia merge base
           persist-credentials: false
-      - uses: mysterekkk/patchsieve@v0.1.0
+      - uses: mysterekkk/patchsieve@v0.1.1
 ```
 
 Błędy (`error`) oblewają sprawdzenie i pojawiają się jako adnotacje oraz w Job Summary; ostrzeżenia są raportowane bez oblewania. Szczegóły: [docs/github-actions.md](docs/github-actions.md) (po angielsku).

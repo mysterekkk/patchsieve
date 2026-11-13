@@ -33,7 +33,7 @@ An LLM reviewer is useful, but it is non-reproducible, needs keys and infrastruc
 ```yaml
 - uses: actions/checkout@v7
   with: { fetch-depth: 0, persist-credentials: false }
-- uses: mysterekkk/patchsieve@v0.1.0
+- uses: mysterekkk/patchsieve@v0.1.1
 ```
 
 ## What it is not

@@ -13,7 +13,7 @@ PatchSieve is a deterministic quality gate for pull requests: no LLM, no AI API 
 ```yaml
 - uses: actions/checkout@v7
   with: { fetch-depth: 0, persist-credentials: false }
-- uses: mysterekkk/patchsieve@v0.1.0
+- uses: mysterekkk/patchsieve@v0.1.1
 ```
 
 ## Honest limits
