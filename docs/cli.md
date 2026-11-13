@@ -11,7 +11,7 @@ patchsieve rules [--json]
 patchsieve doctor
 ```
 
-> The npm package is **not published yet** (see the README for status). Until then, build from source: `npm ci && npm run build && node dist/cli.js scan`.
+> Published on npm as [`patchsieve`](https://www.npmjs.com/package/patchsieve) (Node.js 24 required). To run from source instead: `npm ci && npm run build && node dist/cli.js scan`.
 
 | Option | Meaning |
 | --- | --- |

@@ -88,7 +88,7 @@ node dist/cli.js rules
 node dist/cli.js doctor
 ```
 
-The npm package (`patchsieve`) is **not published yet**; the name was free when checked. Once published, `npx patchsieve scan` will work. Exit codes: `0` passed, `1` findings reached the threshold, `2` configuration/analysis failure. See [docs/cli.md](docs/cli.md).
+Without cloning: `npx patchsieve scan --base main` (package [`patchsieve` on npm](https://www.npmjs.com/package/patchsieve), needs Node.js 24). Exit codes: `0` passed, `1` findings reached the threshold, `2` configuration/analysis failure. See [docs/cli.md](docs/cli.md).
 
 ## Configuration
 
@@ -134,7 +134,7 @@ More: [docs/limitations.md](docs/limitations.md).
 
 ## Roadmap
 
-Not available yet: Python, PHP, Laravel migrations, Go, Rust, deeper dependency analysis, framework-specific rules, opt-in PR comments, npm publication.
+Not available yet: Python, PHP, Laravel migrations, Go, Rust, deeper dependency analysis, framework-specific rules, opt-in PR comments.
 
 ## Contributing
 

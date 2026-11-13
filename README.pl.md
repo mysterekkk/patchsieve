@@ -87,7 +87,7 @@ node dist/cli.js rules
 node dist/cli.js doctor
 ```
 
-Pakiet npm (`patchsieve`) **nie jest jeszcze opublikowany**; nazwa była wolna w chwili sprawdzenia. Po publikacji zadziała `npx patchsieve scan`. Kody wyjścia: `0` OK, `1` znaleziska osiągnęły próg, `2` błąd konfiguracji/analizy.
+Bez klonowania: `npx patchsieve scan --base main` (pakiet [`patchsieve` w npm](https://www.npmjs.com/package/patchsieve), wymaga Node.js 24). Kody wyjścia: `0` OK, `1` znaleziska osiągnęły próg, `2` błąd konfiguracji/analizy.
 
 ## Konfiguracja
 
@@ -127,7 +127,7 @@ PatchSieve traktuje analizowaną zmianę jak dane. Czyta obiekty gita, odmawia p
 
 ## Roadmapa (jeszcze niedostępne)
 
-Python, PHP, migracje Laravel, Go, Rust, głębsza analiza zależności, reguły dla frameworków, opcjonalne komentarze w PR, publikacja w npm.
+Python, PHP, migracje Laravel, Go, Rust, głębsza analiza zależności, reguły dla frameworków, opcjonalne komentarze w PR.
 
 ## Licencja i autor
 
