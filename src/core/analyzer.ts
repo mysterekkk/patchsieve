@@ -8,7 +8,7 @@ import type { Finding, RawFinding, Rule, Severity, SkippedFile, SourceFileInfo }
 import { parseSource, syntaxErrors } from '../parsers/typescript.ts';
 import { parseSuppressions } from './suppressions.ts';
 import { makeMatcher } from '../utils/glob.ts';
-import { normalizePath, sha } from '../utils/text.ts';
+import { sha } from '../utils/text.ts';
 
 
 export interface AnalyzeOptions {
@@ -31,6 +31,20 @@ export interface AnalysisResult {
   suppressed: number;
   baselined: number;
   mode: 'changed' | 'all';
+  /** In-scope files that could not be analyzed; they fail the gate unless failOnSkipped is false. */
+  blockingSkips: number;
+}
+
+/** Skips that are expected and harmless (not code we could have analyzed). */
+const BENIGN_SKIPS = new Set(['symlink', 'binary', 'binary file', 'submodule']);
+
+function ruleApplies(r: Rule, path: string, lang: string | null): boolean {
+  if (r.fileNames) return r.fileNames.includes(basename(path));
+  if (!lang || !(r.languages as string[]).includes(lang)) return false;
+  const kind = classifyFile(path);
+  if (r.appliesTo === 'test' && kind !== 'test') return false;
+  if (r.appliesTo === 'production' && kind !== 'production') return false;
+  return true;
 }
 
 export async function analyze(opts: AnalyzeOptions): Promise<AnalysisResult> {
@@ -54,10 +68,11 @@ export async function analyze(opts: AnalyzeOptions): Promise<AnalysisResult> {
     for (const c of changes) {
       if (c.status === 'deleted') continue;
       if (c.binary) {
-        skipped.push({ path: c.path, reason: 'binary file' });
+        skipped.push({ path: c.path, reason: 'binary file', blocking: false });
         continue;
       }
-      candidates.push({ path: normalizePath(c.path), changed: c.status === 'added' ? null : c.addedLines, isNew: c.status === 'added' });
+      // Paths from git are used verbatim (never rewritten), so odd file names still resolve to the right blob.
+      candidates.push({ path: c.path, changed: c.status === 'added' || c.whole ? null : c.addedLines, isNew: c.status === 'added' });
     }
   } else {
     headSource = fsSource(cwd);
@@ -66,21 +81,23 @@ export async function analyze(opts: AnalyzeOptions): Promise<AnalysisResult> {
 
   const ignored = makeMatcher([...DEFAULT_IGNORES, ...config.ignore]);
   candidates = candidates.filter((c) => !ignored(c.path)).sort((a, b) => (a.path < b.path ? -1 : 1));
-  const relevant = candidates.filter((c) => languageOf(c.path) !== null);
+  const enabled = rules.filter((r) => ruleSetting(config, r.id).severity !== 'off');
+  // Only files that at least one enabled rule can analyze count toward max-files, so unrelated files cannot crowd real ones out.
+  const relevant = candidates.filter((c) => enabled.some((r) => ruleApplies(r, c.path, languageOf(c.path))));
   let selected = relevant;
   if (relevant.length > config.scan.maxFiles) {
-    for (const c of relevant.slice(config.scan.maxFiles)) skipped.push({ path: c.path, reason: `exceeds max-files (${config.scan.maxFiles})` });
+    for (const c of relevant.slice(config.scan.maxFiles)) skipped.push({ path: c.path, reason: `exceeds max-files (${config.scan.maxFiles})`, blocking: true });
     selected = relevant.slice(0, config.scan.maxFiles);
   }
 
   headSource.prefetch?.(selected.map((c) => c.path), config.scan.maxFileSize);
   const readFile = (p: string): string | undefined => {
-    const r = headSource.read(normalizePath(p), config.scan.maxFileSize);
+    const r = headSource.read(p, config.scan.maxFileSize);
     return 'text' in r ? r.text : undefined;
   };
   const readBaseFile = (p: string): string | undefined => {
     if (!baseSource) return undefined;
-    const r = baseSource.read(normalizePath(p), config.scan.maxFileSize);
+    const r = baseSource.read(p, config.scan.maxFileSize);
     return 'text' in r ? r.text : undefined;
   };
 
@@ -89,13 +106,12 @@ export async function analyze(opts: AnalyzeOptions): Promise<AnalysisResult> {
   const allRaw: { f: Finding }[] = [];
   let filesAnalyzed = 0;
   let suppressed = 0;
-  const enabled = rules.filter((r) => ruleSetting(config, r.id).severity !== 'off');
 
   for (const cand of selected) {
     const lang = languageOf(cand.path)!;
     const read = headSource.read(cand.path, config.scan.maxFileSize);
     if ('skip' in read) {
-      skipped.push({ path: cand.path, reason: read.skip });
+      skipped.push({ path: cand.path, reason: read.skip, blocking: !BENIGN_SKIPS.has(read.skip) });
       continue;
     }
     const text = read.text;
@@ -104,18 +120,11 @@ export async function analyze(opts: AnalyzeOptions): Promise<AnalysisResult> {
     if (lang === 'ts' || lang === 'js') {
       sf = parseSource(cand.path, text);
       if (syntaxErrors(sf) > 0) {
-        skipped.push({ path: cand.path, reason: 'syntax errors; file not analyzed' });
+        skipped.push({ path: cand.path, reason: 'syntax errors; file not analyzed', blocking: true });
         continue;
       }
     }
-    const name = basename(cand.path);
-    const applicable = enabled.filter((r) => {
-      if (r.fileNames) return r.fileNames.includes(name);
-      if (!r.languages.includes(lang as 'ts')) return false;
-      if (r.appliesTo === 'test' && info.kind !== 'test') return false;
-      if (r.appliesTo === 'production' && info.kind !== 'production') return false;
-      return true;
-    });
+    const applicable = enabled.filter((r) => ruleApplies(r, cand.path, lang));
     if (applicable.length === 0) continue;
     filesAnalyzed++;
     const supp = lang === 'json' ? { valid: [], invalid: [] } : parseSuppressions(text, sf);
@@ -125,7 +134,7 @@ export async function analyze(opts: AnalyzeOptions): Promise<AnalysisResult> {
       try {
         found = rule.check({ file: info, ts: sf, readFile, readBaseFile, changedPaths, options: ruleSetting(config, rule.id).options });
       } catch (e) {
-        skipped.push({ path: cand.path, reason: `rule ${rule.id} failed: ${(e as Error).message.slice(0, 100)}` });
+        skipped.push({ path: cand.path, reason: `rule ${rule.id} failed: ${(e as Error).message.slice(0, 100)}`, blocking: true });
         continue;
       }
       for (const raw of found) raws.push({ rule, raw });
@@ -199,7 +208,7 @@ export async function analyze(opts: AnalyzeOptions): Promise<AnalysisResult> {
     out.push(f);
   }
   out.sort((a, b) => (a.file < b.file ? -1 : a.file > b.file ? 1 : a.line - b.line || a.column - b.column || (a.ruleId < b.ruleId ? -1 : 1)));
-  return { findings: out, skipped, filesAnalyzed, rulesExecuted: enabled.length, suppressed, baselined, mode };
+  return { findings: out, skipped, filesAnalyzed, rulesExecuted: enabled.length, suppressed, baselined, mode, blockingSkips: config.failOnSkipped ? skipped.filter((s) => s.blocking).length : 0 };
 }
 
 function rangeHits(set: Set<number>, from: number, to: number): boolean {

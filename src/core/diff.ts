@@ -6,8 +6,12 @@ export interface FileChange {
   status: 'added' | 'modified' | 'deleted' | 'renamed';
   /** 1-based new-file line numbers that were added or modified. */
   addedLines: Set<number>;
+  /** Set when the change is too large to track line by line; the whole file counts as changed. */
+  whole?: boolean;
   binary: boolean;
 }
+
+const MAX_TRACKED_LINES = 1_000_000;
 
 export function git(cwd: string, args: string[]): string {
   return execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -43,18 +47,19 @@ export function parseUnifiedDiff(diff: string): FileChange[] {
     else if (line.startsWith('--- ')) {
       // git appends a TAB after header paths that contain spaces
       const m = headerPath(line);
-      minus = m === '/dev/null' ? '' : unquote(m.replace(/^a\//, ''));
+      minus = m === '/dev/null' ? '' : unquote(m).replace(/^a\//, '');
     }
     else if (line.startsWith('+++ ')) {
       const p = headerPath(line);
-      if (p !== '/dev/null') cur.path = unquote(p.replace(/^b\//, ''));
+      if (p !== '/dev/null') cur.path = unquote(p).replace(/^b\//, '');
       else if (!cur.path) cur.path = minus;
     } else if (line.startsWith('@@')) {
       const m = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/.exec(line);
       if (m) {
         const start = Number(m[1]);
         const count = m[2] === undefined ? 1 : Number(m[2]);
-        for (let i = 0; i < count; i++) cur.addedLines.add(start + i);
+        if (count > MAX_TRACKED_LINES || cur.addedLines.size + count > MAX_TRACKED_LINES) cur.whole = true; // huge change: treat the whole file as changed
+        else for (let i = 0; i < count; i++) cur.addedLines.add(start + i);
         inHunk = true;
       }
     }
@@ -72,11 +77,32 @@ function headerPath(line: string): string {
   return tab >= 0 ? t.slice(0, tab) : t;
 }
 
-function unquote(p: string): string {
-  if (p.startsWith('"') && p.endsWith('"')) {
-    try { return JSON.parse(p) as string; } catch { return p.slice(1, -1); }
+const C_ESC: Record<string, number> = { a: 7, b: 8, t: 9, n: 10, v: 11, f: 12, r: 13, '"': 34, '\\': 92 };
+
+/** Decode git's C-style quoted path ("..." with \a \b \t \n \v \f \r \" \\ and octal \NNN bytes). */
+export function unquote(p: string): string {
+  if (!(p.length >= 2 && p.startsWith('"') && p.endsWith('"'))) return p;
+  const s = p.slice(1, -1);
+  const bytes: number[] = [];
+  for (let i = 0; i < s.length; i++) {
+    const c = s[i]!;
+    if (c !== '\\') {
+      for (const b of Buffer.from(c, 'utf8')) bytes.push(b);
+      continue;
+    }
+    const n = s[i + 1];
+    if (n !== undefined && /[0-7]/.test(n)) {
+      const oct = /^[0-7]{1,3}/.exec(s.slice(i + 1))![0];
+      bytes.push(parseInt(oct, 8) & 0xff);
+      i += oct.length;
+    } else if (n !== undefined && Object.hasOwn(C_ESC, n)) {
+      bytes.push(C_ESC[n]!);
+      i++;
+    } else {
+      bytes.push(92);
+    }
   }
-  return p;
+  return Buffer.from(bytes).toString('utf8');
 }
 
 export function assertSafeRef(ref: string): void {

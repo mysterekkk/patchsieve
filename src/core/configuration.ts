@@ -23,6 +23,7 @@ export const configSchema = z
       .strict()
       .default({ annotations: true, sarif: false }),
     failOn: z.enum(['error', 'warning', 'none']).default('error'),
+    failOnSkipped: z.boolean().default(true),
     baseline: z.string().max(300).optional(),
     registry: z
       .object({ enabled: z.boolean().default(false), timeoutMs: z.number().int().min(100).max(30000).default(5000) })

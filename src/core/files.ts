@@ -1,7 +1,7 @@
 import { lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { git } from './diff.ts';
-import { looksBinary, normalizePath } from '../utils/text.ts';
+import { looksBinary } from '../utils/text.ts';
 
 export interface FileSource {
   /** Returns text, or a skip reason. */
@@ -52,8 +52,22 @@ export function gitSource(cwd: string, ref: string): FileSource {
         const i = modes.get(p);
         return i && i.mode !== '120000' && i.mode !== '160000' && i.size <= maxSize && /^[0-9a-f]{40,64}$/.test(i.sha) && !blobs.has(p);
       });
-      for (let start = 0; start < wanted.length; start += 2000) {
-        const chunk = wanted.slice(start, start + 2000);
+      // Chunk by total bytes (and count) so one `cat-file --batch` never exceeds its output buffer.
+      const chunks: string[][] = [];
+      let cur: string[] = [];
+      let bytes = 0;
+      for (const p of wanted) {
+        const size = modes.get(p)!.size;
+        if (cur.length && (bytes + size > 128 * 1024 * 1024 || cur.length >= 2000)) {
+          chunks.push(cur);
+          cur = [];
+          bytes = 0;
+        }
+        cur.push(p);
+        bytes += size;
+      }
+      if (cur.length) chunks.push(cur);
+      for (const chunk of chunks) {
         const raw = execFileSync('git', ['cat-file', '--batch'], { cwd, input: chunk.map((p) => modes.get(p)!.sha).join('\n') + '\n', maxBuffer: 1024 * 1024 * 1024, stdio: ['pipe', 'pipe', 'ignore'] });
         let off = 0;
         for (const p of chunk) {
@@ -105,7 +119,7 @@ export function fsSource(root: string): FileSource {
       const full = join(dir, e.name);
       if (e.isSymbolicLink()) continue;
       if (e.isDirectory()) walk(full, acc);
-      else if (e.isFile()) acc.push(normalizePath(relative(root, full).split(sep).join('/')));
+      else if (e.isFile()) acc.push(relative(root, full).split(sep).join('/'));
     }
   };
   return {

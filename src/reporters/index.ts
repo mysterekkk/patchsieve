@@ -9,14 +9,14 @@ type FailOn = 'error' | 'warning' | 'none';
 
 // ---------- JSON ----------
 export function toJson(r: AnalysisResult, failOn: FailOn): string {
-  const s = summarize(r.findings, failOn);
+  const s = summarize(r.findings, failOn, r.blockingSkips);
   return (
     JSON.stringify(
       {
         tool: { name: 'patchsieve', version: VERSION },
         schemaVersion: 1,
         mode: r.mode,
-        summary: { filesAnalyzed: r.filesAnalyzed, rulesExecuted: r.rulesExecuted, findings: s.total, errors: s.errors, warnings: s.warnings, notes: s.notes, suppressed: r.suppressed, baselined: r.baselined, result: s.failed ? 'failed' : 'passed' },
+        summary: { filesAnalyzed: r.filesAnalyzed, rulesExecuted: r.rulesExecuted, findings: s.total, errors: s.errors, warnings: s.warnings, notes: s.notes, suppressed: r.suppressed, baselined: r.baselined, blockingSkips: r.blockingSkips, result: s.failed ? 'failed' : 'passed' },
         findings: r.findings,
         skipped: r.skipped,
       },
@@ -61,16 +61,24 @@ export function toSarif(r: AnalysisResult): string {
 }
 
 // ---------- Markdown (Job Summary) ----------
-const esc = (s: string): string => sanitize(s).replace(/[|`<>\\]/g, (c) => `\\${c}`).replace(/\r?\n/g, ' ');
+// Untrusted text (paths, package names, messages) must not be able to form links, HTML, emphasis or table cells.
+const esc = (s: string): string => sanitize(s).replace(/[\\`*_{}[\]()#+!|<>&~]/g, (c) => `\\${c}`);
+/** Inline code span that cannot be closed early: the fence is longer than any backtick run inside. */
+const code = (s: string): string => {
+  const t = sanitize(s);
+  const longest = Math.max(0, ...(t.match(/`+/g) ?? []).map((m) => m.length));
+  const fence = '`'.repeat(longest + 1);
+  return `${fence} ${t} ${fence}`.replace(/\|/g, '&#124;');
+};
 
 export function toMarkdown(r: AnalysisResult, failOn: FailOn): string {
-  const s = summarize(r.findings, failOn);
+  const s = summarize(r.findings, failOn, r.blockingSkips);
   const out: string[] = ['## PatchSieve — PR Quality Gate', '', `Files analyzed: **${r.filesAnalyzed}** · Rules executed: **${r.rulesExecuted}** · Errors: **${s.errors}** · Warnings: **${s.warnings}**${s.notes ? ` · Notes: **${s.notes}**` : ''}`, ''];
   const section = (title: string, sev: Severity): void => {
     const list = r.findings.filter((f) => f.severity === sev);
     if (!list.length) return;
     out.push(`### ${title}`, '', '| Rule | Finding | Location |', '| --- | --- | --- |');
-    for (const f of list) out.push(`| [${f.ruleId}](${f.docsUrl}) | **${esc(f.title)}** — ${esc(f.message)} | \`${esc(f.file)}:${f.line}\` |`);
+    for (const f of list) out.push(`| [${f.ruleId}](${f.docsUrl}) | **${esc(f.title)}** — ${esc(f.message)} | ${code(`${f.file}:${f.line}`)} |`);
     out.push('');
   };
   section('Errors', 'error');
@@ -79,11 +87,12 @@ export function toMarkdown(r: AnalysisResult, failOn: FailOn): string {
   if (!r.findings.length) out.push('No findings on the analyzed changes.', '');
   if (r.skipped.length) {
     out.push('<details><summary>Skipped files (' + r.skipped.length + ')</summary>', '');
-    for (const k of r.skipped.slice(0, 50)) out.push(`- \`${esc(k.path)}\`: ${esc(k.reason)}`);
+    for (const k of r.skipped.slice(0, 50)) out.push(`- ${code(k.path)}: ${esc(k.reason)}${k.blocking ? ' **(blocks the gate)**' : ''}`);
     if (r.skipped.length > 50) out.push(`- … and ${r.skipped.length - 50} more`);
     out.push('', '</details>', '');
   }
   if (r.suppressed || r.baselined) out.push(`Suppressed by comment: ${r.suppressed} · Accepted by baseline: ${r.baselined}`, '');
+  if (s.blockedSkips) out.push(`${s.blockedSkips} in-scope file(s) could not be analyzed, which fails the gate (set \`failOnSkipped: false\` to disable).`, '');
   out.push(`**Result: ${s.failed ? 'FAILED' : 'PASSED'}** (fail-on: ${failOn})`, '');
   return out.join('\n');
 }
@@ -91,7 +100,7 @@ export function toMarkdown(r: AnalysisResult, failOn: FailOn): string {
 // ---------- Console ----------
 export function toConsole(r: AnalysisResult, failOn: FailOn, color: boolean): string {
   const c = (code: number, t: string): string => (color ? `\u001b[${code}m${t}\u001b[0m` : t);
-  const s = summarize(r.findings, failOn);
+  const s = summarize(r.findings, failOn, r.blockingSkips);
   const out: string[] = [];
   for (const f of r.findings) {
     const tag = f.severity === 'error' ? c(31, 'error  ') : f.severity === 'warning' ? c(33, 'warning') : c(36, 'note   ');
@@ -101,8 +110,9 @@ export function toConsole(r: AnalysisResult, failOn: FailOn, color: boolean): st
   }
   if (r.skipped.length) {
     out.push('', c(2, `Skipped ${r.skipped.length} file(s):`));
-    for (const k of r.skipped.slice(0, 20)) out.push(c(2, `  ${sanitize(k.path)} (${sanitize(k.reason)})`));
+    for (const k of r.skipped.slice(0, 20)) out.push(c(2, `  ${sanitize(k.path)} (${sanitize(k.reason)})${k.blocking ? ' [blocks the gate]' : ''}`));
   }
+  if (s.blockedSkips) out.push('', `${s.blockedSkips} in-scope file(s) could not be analyzed; this fails the gate (failOnSkipped).`);
   out.push('', `${r.filesAnalyzed} files analyzed, ${r.rulesExecuted} rules, ${s.errors} error(s), ${s.warnings} warning(s), ${s.notes} note(s)`);
   out.push(s.failed ? c(31, 'Result: FAILED') : c(32, 'Result: PASSED'));
   return out.join('\n') + '\n';

@@ -27,6 +27,7 @@ reporting:
   sarif: false                # reserved: SARIF comes from --format sarif or the Action report files
 
 failOn: error                 # error | warning | none
+failOnSkipped: true           # in-scope files that could not be analyzed fail the gate (see below)
 baseline: .patchsieve-baseline.json   # relative path inside the repo
 
 registry:
@@ -45,3 +46,6 @@ CLI flags and Action inputs come from the invoking command or workflow, which is
 
 ## Severity semantics
 `error` and `warning` count toward `failOn`; `note` never fails. `failOn: error` (default) fails on any error; `warning` fails on errors and warnings; `none` never fails.
+
+## Files that cannot be analyzed
+A changed file that PatchSieve should analyze but cannot (larger than `maxFileSize`, syntax errors, a rule that crashed, invalid `package.json`, or files beyond `maxFiles`) is listed as **skipped** and, with `failOnSkipped: true` (default), **fails the gate**. Otherwise a PR could hide a file by making it unreadable to the analyzer. Binary files, symlinks and submodules are benign skips. `maxFiles` counts only files that at least one enabled rule can analyze. Set `failOnSkipped: false` to make skips informational.

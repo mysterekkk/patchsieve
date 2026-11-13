@@ -1,9 +1,16 @@
 import { createHash } from 'node:crypto';
 
-/** Escape terminal control chars (ESC, C0, C1, bidi overrides) so untrusted text cannot inject escapes. */
+// Built from a string of escapes so no raw line separators or control characters live in this source file.
+// eslint-disable-next-line no-control-regex
+const UNSAFE = new RegExp('[\\u0000-\\u001f\\u007f-\\u009f\\u200b-\\u200f\\u2028-\\u202e\\u2066-\\u2069\\ufeff]', 'g');
+
+/**
+ * Render every control character (including newline, carriage return, tab), line/paragraph separator,
+ * zero-width and bidi control as a visible \uXXXX escape. Untrusted text can then never start a new log
+ * line (workflow commands are only recognised at the start of a line) or restyle the terminal.
+ */
 export function sanitize(s: string): string {
-  // eslint-disable-next-line no-control-regex
-  return s.replace(/[\u0000-\u0008\u000b-\u001f\u007f-\u009f‪-‮⁦-⁩]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
+  return s.replace(UNSAFE, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, '0')}`);
 }
 
 export function sha(s: string): string {

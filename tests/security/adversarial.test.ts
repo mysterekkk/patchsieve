@@ -102,7 +102,7 @@ describe('output injection', () => {
     reason: 'r',
     anchor: 'x',
   });
-  const result = { findings: [hostile], skipped: [{ path: 'q\u001b[0m.ts', reason: 'r\nz' }], filesAnalyzed: 1, rulesExecuted: 1, suppressed: 0, baselined: 0, mode: 'changed' as const };
+  const result = { findings: [hostile], skipped: [{ path: 'q\u001b[0m.ts', reason: 'r\nz' }], filesAnalyzed: 1, rulesExecuted: 1, suppressed: 0, baselined: 0, mode: 'changed' as const, blockingSkips: 0 };
   // eslint-disable-next-line no-control-regex
   const ESC = /\u001b/;
 

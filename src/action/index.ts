@@ -30,7 +30,7 @@ async function run(): Promise<void> {
   for (const n of loaded.notes) core.notice(sanitize(n));
 
   const result = await analyze({ cwd, config, base: range?.base, head: range?.head, baseline: loaded.baseline, registryLookup: config.registry.enabled ? npmRegistryLookup() : undefined });
-  const s = summarize(result.findings, config.failOn);
+  const s = summarize(result.findings, config.failOn, result.blockingSkips);
 
   const dir = process.env.RUNNER_TEMP ?? cwd;
   const jsonPath = join(dir, 'patchsieve.json');

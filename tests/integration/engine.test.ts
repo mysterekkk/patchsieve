@@ -51,13 +51,13 @@ describe('diff-first behaviour', () => {
   it('reports files with syntax errors as skipped instead of guessing', async () => {
     const r = await scan({ 'a.txt': 'x' }, { 'a.txt': 'x', 'src/broken.ts': 'function ( {{{ try catch' });
     expect(r.findings).toEqual([]);
-    expect(r.skipped).toEqual([{ path: 'src/broken.ts', reason: 'syntax errors; file not analyzed' }]);
+    expect(r.skipped).toEqual([{ path: 'src/broken.ts', reason: 'syntax errors; file not analyzed', blocking: true }]);
   });
   it('skips ignored paths (generated/, dist/) and enforces max-files', async () => {
     const head = { 'a.txt': 'x', 'generated/gen.ts': EMPTY_CATCH, 'dist/out.js': EMPTY_CATCH, 'src/one.ts': EMPTY_CATCH, 'src/two.ts': EMPTY_CATCH };
     const r = await scan({ 'a.txt': 'x' }, head, applyOverrides(defaultConfig(), { maxFiles: 1 }));
     expect(r.findings.map((f) => f.file)).toEqual(['src/one.ts']);
-    expect(r.skipped).toEqual(expect.arrayContaining([{ path: 'src/two.ts', reason: 'exceeds max-files (1)' }]));
+    expect(r.skipped).toEqual(expect.arrayContaining([{ path: 'src/two.ts', reason: 'exceeds max-files (1)', blocking: true }]));
   });
   it('production-only rules do not fire in test files and vice versa', async () => {
     const r = await scan({ 'a.txt': 'x' }, { 'a.txt': 'x', 'src/impl.ts': "it.only('x', () => {});\n", 'tests/impl.test.ts': "throw new Error('Not implemented');\n" });
@@ -182,7 +182,7 @@ describe('--all mode and symlinks', () => {
       const head = git(repo.dir, 'rev-parse', 'HEAD');
       const r = await analyze({ cwd: repo.dir, config: defaultConfig(), base: repo.base, head });
       expect(r.findings).toEqual([]);
-      expect(r.skipped).toEqual([{ path: 'src/link.ts', reason: 'symlink' }]);
+      expect(r.skipped).toEqual([{ path: 'src/link.ts', reason: 'symlink', blocking: false }]);
     } finally {
       repo.cleanup();
     }

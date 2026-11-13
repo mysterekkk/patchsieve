@@ -50,12 +50,13 @@ export interface Summary {
   warnings: number;
   notes: number;
   failed: boolean;
+  blockedSkips: number;
 }
 
-export function summarize(findings: Finding[], failOn: 'error' | 'warning' | 'none'): Summary {
+export function summarize(findings: Finding[], failOn: 'error' | 'warning' | 'none', blockedSkips = 0): Summary {
   const errors = findings.filter((f) => f.severity === 'error').length;
   const warnings = findings.filter((f) => f.severity === 'warning').length;
   const notes = findings.filter((f) => f.severity === 'note').length;
-  const failed = failOn === 'error' ? errors > 0 : failOn === 'warning' ? errors + warnings > 0 : false;
-  return { total: findings.length, errors, warnings, notes, failed };
+  const failed = failOn === 'none' ? false : blockedSkips > 0 || (failOn === 'error' ? errors > 0 : errors + warnings > 0);
+  return { total: findings.length, errors, warnings, notes, failed, blockedSkips };
 }

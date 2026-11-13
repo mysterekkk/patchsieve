@@ -27,22 +27,35 @@ export function readManifest(text: string): { entries: DepEntry[]; json: Json } 
     const deps = json[section];
     if (!isObject(deps)) continue;
     let inSection = false;
+    let sectionLine = 1;
     const lineOf = new Map<string, number>();
     lines.forEach((l, i) => {
       if (!inSection) {
-        if (new RegExp(`^\\s*"${section}"\\s*:\\s*\\{`).test(l)) inSection = true;
+        const open = new RegExp(`"${section}"\\s*:\\s*\\{`).exec(l);
+        if (open) {
+          sectionLine = i + 1;
+          // Entries may sit on the same line as the opening brace (inline objects).
+          const rest = l.slice(open.index + open[0].length);
+          for (const m of rest.matchAll(/"((?:[^"\\]|\\.)*)"\s*:/g)) lineOf.set(JSON.parse(`"${m[1]}"`) as string, i + 1);
+          inSection = !rest.includes('}');
+        }
         return;
       }
       if (/^\s*\}/.test(l)) {
         inSection = false;
         return;
       }
-      const m = /^\s*"((?:[^"\\]|\\.)*)"\s*:/.exec(l);
-      if (m) lineOf.set(JSON.parse(`"${m[1]}"`) as string, i + 1);
+      // Keys are the quoted strings followed by a colon; values (also quoted) are not followed by one.
+      for (const m of l.matchAll(/"((?:[^"\\]|\\.)*)"\s*:/g)) {
+        const key = JSON.parse(`"${m[1]}"`) as string;
+        if (!lineOf.has(key)) lineOf.set(key, i + 1);
+      }
+      if (l.includes('}')) inSection = false;
     });
     for (const [name, range] of Object.entries(deps)) {
       if (typeof range !== 'string') continue;
-      entries.push({ section, name, range, line: lineOf.get(name) ?? 1 });
+      // Unknown position (unusual formatting): fall back to the section's line, never to line 1.
+      entries.push({ section, name, range, line: lineOf.get(name) ?? sectionLine });
     }
   }
   return { entries, json };

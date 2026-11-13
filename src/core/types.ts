@@ -74,6 +74,8 @@ export interface Rule {
 }
 
 export interface SkippedFile {
+  /** True when the file was in scope but could not be analyzed (counts against the gate). */
+  blocking?: boolean;
   path: string;
   reason: string;
 }

@@ -151,7 +151,7 @@ export async function main(argv: string[], out: { write(s: string): void } = pro
     if (values.output) writeFileSync(resolve(cwd, values.output), text);
     else out.write(text);
     for (const s of result.skipped.slice(0, 20)) if (fmt !== 'console') err.write(`skipped: ${sanitize(s.path)} (${sanitize(s.reason)})\n`);
-    return summarize(result.findings, config.failOn).failed ? 1 : 0;
+    return summarize(result.findings, config.failOn, result.blockingSkips).failed ? 1 : 0;
   } catch (e) {
     err.write(`patchsieve: ${sanitize((e as Error).message)}\n`);
     return 2;
