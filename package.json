@@ -23,19 +23,36 @@
     "test": "vitest run",
     "check": "npm run lint && npm run typecheck && npm test && npm run build"
   },
-  "dependencies": {
-    "@actions/core": "^3.0.1",
-    "typescript": "^6.0.3",
-    "yaml": "^2.9.1",
-    "zod": "^4.6.7"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "@actions/core": "^3.0.1",
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.19.2",
     "esbuild": "^0.28.2",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.2",
-    "vitest": "^5.1.0"
-  }
+    "vitest": "^5.1.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mysterekkk/patchsieve.git"
+  },
+  "homepage": "https://github.com/mysterekkk/patchsieve#readme",
+  "bugs": {
+    "url": "https://github.com/mysterekkk/patchsieve/issues"
+  },
+  "keywords": [
+    "github-actions",
+    "pull-request",
+    "code-review",
+    "static-analysis",
+    "ai-generated-code",
+    "coding-agents",
+    "quality-gate",
+    "typescript"
+  ]
 }
