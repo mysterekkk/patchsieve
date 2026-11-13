@@ -135,4 +135,4 @@ Python, PHP, migracje Laravel, Go, Rust, głębsza analiza zależności, reguły
 
 *Potrzebujesz pomocy ze zautomatyzowanymi procesami wytwarzania oprogramowania?* LuroWeb pomaga zespołom budować bezpieczne workflow deweloperskie, pipeline'y CI/CD i niestandardowe automatyzacje.
 
-Zgłoszenia i fałszywe alarmy: GitHub Issues.
+Zgłoszenia i fałszywe alarmy: GitHub Issues; pomysły i pytania: [GitHub Discussions](https://github.com/mysterekkk/patchsieve/discussions).

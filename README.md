@@ -152,4 +152,4 @@ Built and maintained by **LuroWeb**.
 
 ## Support
 
-Use GitHub Issues for bugs and false positives.
+Use GitHub Issues for bugs and false positives, and [GitHub Discussions](https://github.com/mysterekkk/patchsieve/discussions) for ideas and questions.
