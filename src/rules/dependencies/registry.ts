@@ -15,7 +15,7 @@ export function npmRegistryLookup(): RegistryLookup {
   return async (name, timeoutMs) => {
     const hit = cache.get(name);
     if (hit) return hit;
-    let v: RegistryVerdict = 'unknown';
+    let v: RegistryVerdict;
     try {
       const res = await fetch(`https://registry.npmjs.org/${encodeURIComponent(name)}`, {
         method: 'GET',

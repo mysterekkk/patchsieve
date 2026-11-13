@@ -35,13 +35,12 @@ function readWorking(cwd: string, rel: string): string | undefined {
 export function loadConfig(o: LoadOptions): LoadedConfig {
   const rel = o.configPath ?? DEFAULT_CONFIG;
   const notes: string[] = [];
-  let trustedText: string | undefined;
-  let baselineRel: string | undefined;
+
   const useBase = o.mode === 'changed' && !o.trustHeadConfig && o.base !== undefined;
   const mb = useBase ? mergeBaseOf(o.cwd, o.base!, o.head ?? 'HEAD') : undefined;
   const read = (p: string): string | undefined => (mb ? showFile(o.cwd, mb, p) : readWorking(o.cwd, p));
 
-  trustedText = read(rel);
+  const trustedText = read(rel);
   const headText = mb ? readWorking(o.cwd, rel) : undefined;
   if (mb && headText !== undefined && headText !== trustedText) {
     notes.push(`${rel} differs between the base branch and this change. The base branch version is enforced; changes to it take effect after merge.`);
@@ -53,7 +52,7 @@ export function loadConfig(o: LoadOptions): LoadedConfig {
     if (e instanceof ConfigError) throw e;
     throw new ConfigError(String(e));
   }
-  baselineRel = config.baseline ?? DEFAULT_BASELINE;
+  const baselineRel = config.baseline ?? DEFAULT_BASELINE;
   if (/^(\/|[A-Za-z]:|.*\.\.)/.test(baselineRel)) throw new ConfigError(`baseline path must be a relative path inside the repository: ${baselineRel}`);
   const baselineText = read(baselineRel);
   let baseline = new Set<string>();

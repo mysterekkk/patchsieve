@@ -1,0 +1,15 @@
+version: 1
+
+# Dogfooding: PatchSieve checks its own pull requests.
+# Fixtures contain intentionally defective code and must never be reported.
+ignore:
+  - "fixtures/**"
+  - "dist/**"
+  - "docs/launch/**"
+
+rules:
+  PS301: warning
+  PS302: error
+  PS305: error
+
+failOn: error

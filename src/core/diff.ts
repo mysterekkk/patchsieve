@@ -40,9 +40,13 @@ export function parseUnifiedDiff(diff: string): FileChange[] {
     else if (line.startsWith('rename from ')) { cur.status = 'renamed'; cur.oldPath = unquote(line.slice(12)); }
     else if (line.startsWith('rename to ')) cur.path = unquote(line.slice(10));
     else if (line.startsWith('Binary files ') || line.startsWith('GIT binary patch')) cur.binary = true;
-    else if (line.startsWith('--- ')) minus = line.slice(4) === '/dev/null' ? '' : unquote(line.slice(4).replace(/^a\//, ''));
+    else if (line.startsWith('--- ')) {
+      // git appends a TAB after header paths that contain spaces
+      const m = headerPath(line);
+      minus = m === '/dev/null' ? '' : unquote(m.replace(/^a\//, ''));
+    }
     else if (line.startsWith('+++ ')) {
-      const p = line.slice(4);
+      const p = headerPath(line);
       if (p !== '/dev/null') cur.path = unquote(p.replace(/^b\//, ''));
       else if (!cur.path) cur.path = minus;
     } else if (line.startsWith('@@')) {
@@ -62,6 +66,12 @@ export function parseUnifiedDiff(diff: string): FileChange[] {
   return changes.filter((c) => c.path);
 }
 
+function headerPath(line: string): string {
+  const t = line.slice(4);
+  const tab = t.indexOf('\t');
+  return tab >= 0 ? t.slice(0, tab) : t;
+}
+
 function unquote(p: string): string {
   if (p.startsWith('"') && p.endsWith('"')) {
     try { return JSON.parse(p) as string; } catch { return p.slice(1, -1); }
@@ -70,7 +80,7 @@ function unquote(p: string): string {
 }
 
 export function assertSafeRef(ref: string): void {
-  if (!/^[A-Za-z0-9._\/~^@{}-]+$/.test(ref) || ref.startsWith('-')) throw new Error(`Unsafe git ref: ${JSON.stringify(ref)}`);
+  if (!/^[A-Za-z0-9._/~^@{}-]+$/.test(ref) || ref.startsWith('-')) throw new Error(`Unsafe git ref: ${JSON.stringify(ref)}`);
 }
 
 export function getChanges(cwd: string, base: string, head: string): FileChange[] {

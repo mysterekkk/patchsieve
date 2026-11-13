@@ -1,0 +1,77 @@
+name: 'PatchSieve'
+description: 'Deterministic pull request quality gate. Catch what coding agents miss. No LLM, no API keys, no code execution.'
+author: 'LuroWeb'
+
+branding:
+  icon: 'filter'
+  color: 'purple'
+
+inputs:
+  github-token:
+    description: 'Reserved for future features. PatchSieve v0.x needs no GitHub API calls, so the default read-only token is never used for analysis.'
+    required: false
+    default: ${{ github.token }}
+  config:
+    description: 'Path to the config file. Policy is read from the base branch, not from the pull request. Default: .patchsieve.yml'
+    required: false
+    default: ''
+  fail-on:
+    description: 'Severity that fails the check: error, warning or none. Default: error (or the value from the config file).'
+    required: false
+    default: ''
+  format:
+    description: 'What to print in the log: console, json, sarif or markdown. All report files are always written.'
+    required: false
+    default: 'console'
+  rules:
+    description: 'Comma- or newline-separated rule overrides such as PS201=error, PS301=off.'
+    required: false
+    default: ''
+  ignore:
+    description: 'Extra glob patterns to ignore, comma- or newline-separated.'
+    required: false
+    default: ''
+  scan-mode:
+    description: 'changed (diff against the pull request base) or all (whole working tree). Default: changed on pull requests.'
+    required: false
+    default: ''
+  max-files:
+    description: 'Maximum number of files to analyze. Default: 2000.'
+    required: false
+    default: ''
+  max-file-size:
+    description: 'Maximum size in bytes of a single analyzed file. Default: 1048576.'
+    required: false
+    default: ''
+  registry-check:
+    description: 'Opt in to npm registry lookups for new unscoped packages (PS104). Sends package names to registry.npmjs.org. Default: false.'
+    required: false
+    default: ''
+  annotations:
+    description: 'Emit GitHub annotations (true/false). Default: true.'
+    required: false
+    default: ''
+  sarif-output:
+    description: 'Workspace-relative path for the SARIF file. Default: a file in RUNNER_TEMP.'
+    required: false
+    default: ''
+
+outputs:
+  findings:
+    description: 'Total number of findings.'
+  errors:
+    description: 'Number of error-level findings.'
+  warnings:
+    description: 'Number of warning-level findings.'
+  passed:
+    description: 'true if the quality gate passed, otherwise false.'
+  json-path:
+    description: 'Path to the JSON report.'
+  sarif-path:
+    description: 'Path to the SARIF 2.1.0 report.'
+  markdown-path:
+    description: 'Path to the Markdown report.'
+
+runs:
+  using: node24
+  main: dist/action.js

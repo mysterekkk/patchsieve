@@ -106,7 +106,7 @@ export function checkAgainstLock(lock: Lock, manifestPath: string, e: DepEntry):
       }
       return { state: 'missing' };
     }
-    if (isObject(j.dependencies)) return e.name in j.dependencies ? { state: 'ok' } : { state: 'missing' }; // lockfile v1
+    if (isObject(j.dependencies)) return Object.hasOwn(j.dependencies, e.name) ? { state: 'ok' } : { state: 'missing' }; // lockfile v1
     return { state: 'unknown' };
   }
   if (lock.kind === 'pnpm') {
@@ -125,7 +125,7 @@ export function checkAgainstLock(lock: Lock, manifestPath: string, e: DepEntry):
     } else scope = y; // pre-workspace single project format
     for (const s of DEP_SECTIONS) {
       const d = scope[s];
-      if (!isObject(d) || !(e.name in d)) continue;
+      if (!isObject(d) || !Object.hasOwn(d, e.name)) continue;
       const v = d[e.name];
       const spec = isObject(v) ? v.specifier : isObject(scope.specifiers) ? scope.specifiers[e.name] : undefined;
       if (typeof spec !== 'string') return { state: 'ok' };

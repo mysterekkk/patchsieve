@@ -4,7 +4,7 @@ const schema = z.object({ version: z.literal(1), fingerprints: z.array(z.string(
 
 export function parseBaseline(text: string): Set<string> {
   let raw: unknown;
-  try { raw = JSON.parse(text); } catch (e) { throw new Error(`baseline: invalid JSON: ${(e as Error).message}`); }
+  try { raw = JSON.parse(text); } catch (e) { throw new Error(`baseline: invalid JSON: ${(e as Error).message}`, { cause: e }); }
   const r = schema.safeParse(raw);
   if (!r.success) throw new Error(`baseline: ${r.error.issues.map((i) => i.message).join('; ')}`);
   return new Set(r.data.fingerprints);

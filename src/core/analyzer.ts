@@ -1,7 +1,7 @@
 import { basename } from 'node:path';
-import { applyOverrides, DEFAULT_IGNORES, ruleSetting, type Config } from './configuration.ts';
+import { DEFAULT_IGNORES, ruleSetting, type Config } from './configuration.ts';
 import { getChanges, mergeBaseOf } from './diff.ts';
-import { classifyFile, fsSource, gitSource, hasGeneratedHeader, languageOf, type FileSource } from './files.ts';
+import { classifyFile, fsSource, gitSource, languageOf, type FileSource } from './files.ts';
 import { REPO_URL, SUGGESTIONS } from './findings.ts';
 import { ALL_RULES } from './rule-registry.ts';
 import type { Finding, RawFinding, Rule, Severity, SkippedFile, SourceFileInfo } from './types.ts';
@@ -130,10 +130,6 @@ export async function analyze(opts: AnalyzeOptions): Promise<AnalysisResult> {
       continue;
     }
     const text = read.text;
-    if ((lang === 'ts' || lang === 'js') && hasGeneratedHeader(text)) {
-      skipped.push({ path: cand.path, reason: 'generated file header' });
-      continue;
-    }
     const info: SourceFileInfo = { path: cand.path, text, kind: classifyFile(cand.path), changedLines: cand.changed, isNew: cand.isNew };
     let sf;
     if (lang === 'ts' || lang === 'js') {
