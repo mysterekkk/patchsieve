@@ -159,5 +159,5 @@ export async function main(argv: string[], out: { write(s: string): void } = pro
 }
 
 if (process.argv[1] && /cli\.(js|ts)$/.test(process.argv[1].replace(/\\/g, '/'))) {
-  main(process.argv.slice(2)).then((code) => { process.exitCode = code; });
+  void main(process.argv.slice(2)).then((code) => { process.exitCode = code; });
 }

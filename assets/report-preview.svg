@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 456" role="img" aria-label="PatchSieve console report for the fake-test fixture">
+  <rect width="940" height="456" rx="14" fill="#0b1437"/>
+  <rect width="940" height="44" rx="14" fill="#1a1f4d"/>
+  <rect y="30" width="940" height="14" fill="#1a1f4d"/>
+  <circle cx="26" cy="22" r="6" fill="#f87171"/><circle cx="46" cy="22" r="6" fill="#fbbf24"/><circle cx="66" cy="22" r="6" fill="#2dd4bf"/>
+  <text x="90" y="27" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#b9b6f7">$ patchsieve scan --base main   (fixture: fixtures/pull-requests/fake-test)</text>
+  <g font-family="Cascadia Mono, Consolas, Menlo, monospace" font-size="13.5">
+    <text x="28" y="84" fill="#fbbf24" xml:space="preserve">warning PS301 Test without meaningful assertion  tests/orders.test.ts:5:3</text>
+    <text x="28" y="104" fill="#e5e7ff" xml:space="preserve">        This test has no explicit assertion on a result.</text>
+    <text x="28" y="124" fill="#8b8fb8" xml:space="preserve">        fix: Assert on the returned value or observable side effect (e.g. `expect(result).toEqual(...)`).</text>
+    <text x="28" y="144" fill="#f87171" xml:space="preserve">error   PS302 Assertion with no effective check  tests/orders.test.ts:11:5</text>
+    <text x="28" y="164" fill="#e5e7ff" xml:space="preserve">        This expect(...) is never completed with a matcher, so nothing is asserted.</text>
+    <text x="28" y="184" fill="#8b8fb8" xml:space="preserve">        fix: Finish the assertion with a matcher, e.g. `expect(result).toBe(expected)`.</text>
+    <text x="28" y="204" fill="#fbbf24" xml:space="preserve">warning PS303 Unconditional assertion  tests/orders.test.ts:15:5</text>
+    <text x="28" y="224" fill="#e5e7ff" xml:space="preserve">        This assertion compares a constant to itself and can never fail.</text>
+    <text x="28" y="244" fill="#8b8fb8" xml:space="preserve">        fix: Assert against a real computed value instead of a constant.</text>
+    <text x="28" y="264" fill="#fbbf24" xml:space="preserve">warning PS304 Skipped test  tests/orders.test.ts:18:3</text>
+    <text x="28" y="284" fill="#e5e7ff" xml:space="preserve">        This test is skipped and will not run.</text>
+    <text x="28" y="304" fill="#8b8fb8" xml:space="preserve">        fix: Remove the skip, fix the test, or link a tracking issue in a comment.</text>
+    <text x="28" y="324" fill="#f87171" xml:space="preserve">error   PS305 Focused test committed  tests/orders.test.ts:20:3</text>
+    <text x="28" y="344" fill="#e5e7ff" xml:space="preserve">        A focused test was committed; other tests in scope will not run.</text>
+    <text x="28" y="364" fill="#8b8fb8" xml:space="preserve">        fix: Remove `.only` / `fit` / `fdescribe` before merging.</text>
+    <text x="28" y="384" fill="#e5e7ff" xml:space="preserve"></text>
+    <text x="28" y="404" fill="#e5e7ff" xml:space="preserve">1 files analyzed, 22 rules, 2 error(s), 3 warning(s), 0 note(s)</text>
+    <text x="28" y="424" fill="#f87171" xml:space="preserve">Result: FAILED</text>
+  </g>
+</svg>

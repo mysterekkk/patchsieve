@@ -36,3 +36,35 @@ export function unwrapExpr(e: ts.Expression): ts.Expression {
   while (ts.isParenthesizedExpression(x) || ts.isAsExpression(x) || ts.isNonNullExpression(x) || ts.isSatisfiesExpression(x)) x = x.expression;
   return x;
 }
+
+export interface CommentInfo {
+  line: number;
+  /** Raw comment text including the // or slash-star markers. */
+  text: string;
+  /** True when only whitespace precedes the comment on its first line. */
+  standalone: boolean;
+}
+
+/** All real comments in a parsed file (never text inside string/template/regex literals). */
+export function collectComments(sf: ts.SourceFile): CommentInfo[] {
+  const seen = new Set<number>();
+  const out: CommentInfo[] = [];
+  const text = sf.text;
+  const add = (ranges: ts.CommentRange[] | undefined): void => {
+    for (const r of ranges ?? []) {
+      if (seen.has(r.pos)) continue;
+      seen.add(r.pos);
+      const lc = sf.getLineAndCharacterOfPosition(r.pos);
+      const lineStart = r.pos - lc.character;
+      out.push({ line: lc.line + 1, text: text.slice(r.pos, r.end), standalone: text.slice(lineStart, r.pos).trim() === '' });
+    }
+  };
+  const visit = (n: ts.Node): void => {
+    add(ts.getLeadingCommentRanges(text, n.getFullStart()));
+    add(ts.getTrailingCommentRanges(text, n.getEnd()));
+    ts.forEachChild(n, visit);
+  };
+  visit(sf);
+  add(ts.getLeadingCommentRanges(text, sf.endOfFileToken.getFullStart()));
+  return out.sort((a, b) => a.line - b.line);
+}

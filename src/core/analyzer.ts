@@ -6,6 +6,7 @@ import { REPO_URL, SUGGESTIONS } from './findings.ts';
 import { ALL_RULES } from './rule-registry.ts';
 import type { Finding, RawFinding, Rule, Severity, SkippedFile, SourceFileInfo } from './types.ts';
 import { parseSource, syntaxErrors } from '../parsers/typescript.ts';
+import { parseSuppressions } from './suppressions.ts';
 import { makeMatcher } from '../utils/glob.ts';
 import { normalizePath, sha } from '../utils/text.ts';
 
@@ -30,39 +31,6 @@ export interface AnalysisResult {
   suppressed: number;
   baselined: number;
   mode: 'changed' | 'all';
-}
-
-const SUPPRESS_RE = /(?:\/\/|\/\*|#|--)\s*patchsieve-ignore\b(.*)$/;
-const SUPPRESS_VALID = /^\s+((?:PS\d{3})(?:\s*,\s*PS\d{3})*)\s+--\s+(\S.{2,}?)\s*(?:\*\/)?\s*$/;
-
-interface Suppression {
-  ids: Set<string>;
-  line: number;
-}
-
-function parseSuppressions(text: string): { valid: Suppression[]; invalid: { line: number; text: string }[] } {
-  const valid: Suppression[] = [];
-  const invalid: { line: number; text: string }[] = [];
-  const lines = text.split(/\r\n|\r|\n/);
-  lines.forEach((l, i) => {
-    if (l.length > 2000) return;
-    const m = SUPPRESS_RE.exec(l);
-    if (!m) return;
-    const v = SUPPRESS_VALID.exec(m[1]!);
-    if (!v) {
-      invalid.push({ line: i + 1, text: l.trim().slice(0, 120) });
-      return;
-    }
-    const ids = new Set(v[1]!.split(/\s*,\s*/));
-    const standalone = /^\s*(\/\/|\/\*|#|--)/.test(l);
-    let target = i + 1;
-    if (standalone) {
-      target = i + 2;
-      while (target <= lines.length && lines[target - 1]!.trim() === '') target++;
-    }
-    valid.push({ ids, line: target });
-  });
-  return { valid, invalid };
 }
 
 export async function analyze(opts: AnalyzeOptions): Promise<AnalysisResult> {
@@ -150,7 +118,7 @@ export async function analyze(opts: AnalyzeOptions): Promise<AnalysisResult> {
     });
     if (applicable.length === 0) continue;
     filesAnalyzed++;
-    const supp = lang === 'json' ? { valid: [], invalid: [] } : parseSuppressions(text);
+    const supp = lang === 'json' ? { valid: [], invalid: [] } : parseSuppressions(text, sf);
     const raws: { rule: Rule; raw: RawFinding }[] = [];
     for (const rule of applicable) {
       let found: RawFinding[];

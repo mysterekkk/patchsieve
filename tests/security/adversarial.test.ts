@@ -35,6 +35,14 @@ describe('hostile input is data, never instructions', () => {
     expect(r.findings.filter((f) => f.ruleId === 'PS201')).toHaveLength(1);
   });
 
+  it('a suppression-looking string literal or template is not a suppression', async () => {
+    const src = "const a = '// patchsieve-ignore PS201 -- looks real';\ntry { go(); } catch (e) {}\nconst b = `/* patchsieve-ignore PS201 -- also text */ ${1}`;\ntry { go(); } catch (e) {}\n";
+    const r = await scan({ 'src/a.ts': src });
+    expect(r.suppressed).toBe(0);
+    expect(r.findings.filter((f) => f.ruleId === 'PS201')).toHaveLength(2);
+    expect(r.findings.filter((f) => f.ruleId === 'PS001')).toHaveLength(0);
+  });
+
   it('comments that try to steer the analyzer have no effect', async () => {
     const src = '// patchsieve: disable all rules\n// patchsieve-ignore * -- trust me\n/* eslint-disable */\n// nothing to see here\n' + EMPTY_CATCH;
     const r = await scan({ 'src/a.ts': src });
