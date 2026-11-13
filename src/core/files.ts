@@ -8,6 +8,8 @@ export interface FileSource {
   read(path: string, maxSize: number): { text: string } | { skip: string };
   exists(path: string): boolean;
   list(): string[];
+  /** Optional: load many files with one process so later read() calls are cheap. */
+  prefetch?(paths: string[], maxSize: number): void;
 }
 
 const TEST_RE = /(^|\/)(__tests__|__mocks__|tests?|spec|e2e|cypress|playwright)\/|\.(test|spec|cy|e2e)\.[cm]?[jt]sx?$/i;
@@ -33,17 +35,39 @@ export function languageOf(path: string): 'ts' | 'js' | 'json' | 'sql' | 'yaml' 
 
 /** Reads blobs at a git ref. Never touches the working tree, so symlinks in a PR cannot redirect reads. */
 export function gitSource(cwd: string, ref: string): FileSource {
-  const modes = new Map<string, { mode: string; size: number }>();
+  const modes = new Map<string, { mode: string; size: number; sha: string }>();
+  const blobs = new Map<string, Buffer>();
   const out = git(cwd, ['-c', 'core.quotePath=false', 'ls-tree', '-r', '-l', '-z', ref]);
   for (const entry of out.split('\0')) {
     if (!entry) continue;
     const tab = entry.indexOf('\t');
     const meta = entry.slice(0, tab).trim().split(/\s+/);
-    modes.set(entry.slice(tab + 1), { mode: meta[0] ?? '', size: Number(meta[3] ?? 0) });
+    modes.set(entry.slice(tab + 1), { mode: meta[0] ?? '', size: Number(meta[3] ?? 0), sha: meta[2] ?? '' });
   }
   return {
     exists: (p) => modes.has(p),
     list: () => [...modes.keys()].sort(),
+    prefetch(paths, maxSize) {
+      const wanted = paths.filter((p) => {
+        const i = modes.get(p);
+        return i && i.mode !== '120000' && i.mode !== '160000' && i.size <= maxSize && /^[0-9a-f]{40,64}$/.test(i.sha) && !blobs.has(p);
+      });
+      for (let start = 0; start < wanted.length; start += 2000) {
+        const chunk = wanted.slice(start, start + 2000);
+        const raw = execFileSync('git', ['cat-file', '--batch'], { cwd, input: chunk.map((p) => modes.get(p)!.sha).join('\n') + '\n', maxBuffer: 1024 * 1024 * 1024, stdio: ['pipe', 'pipe', 'ignore'] });
+        let off = 0;
+        for (const p of chunk) {
+          const nl = raw.indexOf(10, off);
+          if (nl < 0) break;
+          const header = raw.subarray(off, nl).toString('latin1').split(' ');
+          off = nl + 1;
+          if (header[1] === 'missing') continue;
+          const size = Number(header[2]);
+          blobs.set(p, raw.subarray(off, off + size));
+          off += size + 1;
+        }
+      }
+    },
     read(path, maxSize) {
       const info = modes.get(path);
       if (!info) return { skip: 'not present at ref' };
@@ -51,7 +75,7 @@ export function gitSource(cwd: string, ref: string): FileSource {
       if (info.mode === '160000') return { skip: 'submodule' };
       if (info.size > maxSize) return { skip: `larger than ${maxSize} bytes` };
       try {
-        const buf = execBlob(cwd, ref, path);
+        const buf = blobs.get(path) ?? execBlob(cwd, ref, path);
         if (looksBinary(buf)) return { skip: 'binary' };
         return { text: decode(buf) };
       } catch {

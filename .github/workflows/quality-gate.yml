@@ -1,0 +1,32 @@
+name: PatchSieve quality gate
+
+# Dogfooding: PatchSieve analyzes its own pull requests.
+# Trigger is pull_request (never pull_request_target): fork PRs run with a read-only token and no secrets.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: quality-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  patchsieve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./
+        id: gate
+      - name: Show outputs
+        if: always()
+        env:
+          ERRORS: ${{ steps.gate.outputs.errors }}
+          WARNINGS: ${{ steps.gate.outputs.warnings }}
+        run: echo "errors=$ERRORS warnings=$WARNINGS"

@@ -1,0 +1,17 @@
+name: PatchSieve
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  patchsieve:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0          # the merge base must be available
+          persist-credentials: false
+      - uses: mysterekkk/patchsieve@v0.1.0

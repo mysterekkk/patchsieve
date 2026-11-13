@@ -105,6 +105,7 @@ export async function analyze(opts: AnalyzeOptions): Promise<AnalysisResult> {
     selected = relevant.slice(0, config.scan.maxFiles);
   }
 
+  headSource.prefetch?.(selected.map((c) => c.path), config.scan.maxFileSize);
   const readFile = (p: string): string | undefined => {
     const r = headSource.read(normalizePath(p), config.scan.maxFileSize);
     return 'text' in r ? r.text : undefined;
