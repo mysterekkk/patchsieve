@@ -2,7 +2,7 @@ import type { Config } from '../../core/configuration.ts';
 import type { FileSource } from '../../core/files.ts';
 import { makeFinding } from '../../core/findings.ts';
 import type { Finding } from '../../core/types.ts';
-import { isRegistryRange, readManifest } from './index.ts';
+import { firstLine, isRegistryRange, readManifest } from './index.ts';
 
 export type RegistryVerdict = 'exists' | 'missing' | 'unknown';
 export type RegistryLookup = (name: string, timeoutMs: number) => Promise<RegistryVerdict>;
@@ -51,7 +51,7 @@ export async function registryFindings(
     if (!('text' in r)) continue;
     let entries;
     try {
-      entries = readManifest(r.text, f.changed && f.changed.size ? Math.min(...f.changed) : 1).entries;
+      entries = readManifest(r.text, firstLine(f.changed)).entries;
     } catch {
       continue;
     }

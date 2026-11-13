@@ -14,6 +14,14 @@ export interface DepEntry {
 
 type Json = Record<string, unknown>;
 
+/** Smallest line in a set (loop, never spread: sets can be huge). 1 when empty or unknown. */
+export function firstLine(lines: Set<number> | null | undefined): number {
+  if (!lines || lines.size === 0) return 1;
+  let m = Infinity;
+  for (const l of lines) if (l < m) m = l;
+  return m;
+}
+
 function isObject(v: unknown): v is Json {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
@@ -146,8 +154,7 @@ export function checkAgainstLock(lock: Lock, manifestPath: string, e: DepEntry):
 
 /** Dependencies added or whose range changed relative to base (all of them when there is no base). */
 function candidates(ctx: RuleContext): { entries: DepEntry[]; json: Json } {
-  const changed = ctx.file.changedLines;
-  const head = readManifest(ctx.file.text, changed && changed.size ? Math.min(...changed) : 1);
+  const head = readManifest(ctx.file.text, firstLine(ctx.file.changedLines));
   const baseText = ctx.readBaseFile(ctx.file.path);
   if (baseText === undefined || ctx.file.isNew) return head;
   let baseMap = new Map<string, string>();
