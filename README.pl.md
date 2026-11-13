@@ -73,6 +73,13 @@ Raport z konsoli wygenerowany przez zbudowane CLI na fixture `fake-test` (obraz 
 
 <p align="center"><img src="https://raw.githubusercontent.com/mysterekkk/patchsieve/main/assets/report-preview.svg" alt="Raport PatchSieve na przykładowym PR" width="860"></p>
 
+## W praktyce
+
+Prawdziwe zrzuty ekranu z jednorazowego demo-PR-a w tym repozytorium (zamkniętego bez merge). Najpierw commit z pustym `catch`, niedokończoną funkcją i asercją bez matchera; potem ten sam PR po poprawkach.
+
+<p align="center"><img src="https://raw.githubusercontent.com/mysterekkk/patchsieve/main/docs/images/gate-failed.jpg" alt="Job Summary PatchSieve z trzema błędami na demo-PR-ze" width="860"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/mysterekkk/patchsieve/main/docs/images/gate-passed.jpg" alt="Job Summary PatchSieve: PASSED po poprawkach" width="860"></p>
+
 ## Lokalne CLI
 
 ```bash
