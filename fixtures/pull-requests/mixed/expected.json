@@ -1,0 +1,1 @@
+{"findings":[{"ruleId":"PS201","file":"src/jobs.ts","line":15},{"ruleId":"PS301","file":"tests/jobs.test.ts","line":8}]}

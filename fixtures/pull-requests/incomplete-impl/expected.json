@@ -1,0 +1,1 @@
+{"findings":[{"ruleId":"PS403","file":"src/payment.ts","line":4},{"ruleId":"PS402","file":"src/payment.ts","line":7},{"ruleId":"PS401","file":"src/payment.ts","line":12}]}

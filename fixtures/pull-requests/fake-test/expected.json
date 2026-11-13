@@ -1,0 +1,1 @@
+{"findings":[{"ruleId":"PS301","file":"tests/orders.test.ts","line":5},{"ruleId":"PS302","file":"tests/orders.test.ts","line":11},{"ruleId":"PS303","file":"tests/orders.test.ts","line":15},{"ruleId":"PS304","file":"tests/orders.test.ts","line":18},{"ruleId":"PS305","file":"tests/orders.test.ts","line":20}]}

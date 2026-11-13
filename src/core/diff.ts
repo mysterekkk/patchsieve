@@ -17,39 +17,47 @@ export function git(cwd: string, args: string[]): string {
 export function parseUnifiedDiff(diff: string): FileChange[] {
   const changes: FileChange[] = [];
   let cur: FileChange | null = null;
-  let newLine = 0;
+  let inHunk = false;
+  let minus = '';
+  const hdrPath = new Map<FileChange, string>();
   for (const raw of diff.split('\n')) {
     const line = raw.endsWith('\r') ? raw.slice(0, -1) : raw;
     if (line.startsWith('diff --git ')) {
       if (cur) changes.push(cur);
       cur = { path: '', status: 'modified', addedLines: new Set(), binary: false };
+      inHunk = false;
+      minus = '';
+      const h = /^diff --git a\/(.+) b\/(.+)$/.exec(line);
+      if (h && !line.includes('"') && h[1] === h[2]) hdrPath.set(cur, h[2]!);
       continue;
     }
     if (!cur) continue;
+    // Headers are only valid before the first hunk of a file. Inside a hunk every line is content
+    // ('+', '-', ' ', '\'), so an added line such as "++ x" must never be read as a header.
+    if (inHunk && !line.startsWith('@@')) continue;
     if (line.startsWith('new file mode')) cur.status = 'added';
     else if (line.startsWith('deleted file mode')) cur.status = 'deleted';
     else if (line.startsWith('rename from ')) { cur.status = 'renamed'; cur.oldPath = unquote(line.slice(12)); }
     else if (line.startsWith('rename to ')) cur.path = unquote(line.slice(10));
     else if (line.startsWith('Binary files ') || line.startsWith('GIT binary patch')) cur.binary = true;
-    else if (line.startsWith('--- ')) { /* old path */ }
+    else if (line.startsWith('--- ')) minus = line.slice(4) === '/dev/null' ? '' : unquote(line.slice(4).replace(/^a\//, ''));
     else if (line.startsWith('+++ ')) {
       const p = line.slice(4);
       if (p !== '/dev/null') cur.path = unquote(p.replace(/^b\//, ''));
-      else if (cur.status === 'deleted' && !cur.path) cur.path = cur.oldPath ?? '';
+      else if (!cur.path) cur.path = minus;
     } else if (line.startsWith('@@')) {
       const m = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/.exec(line);
       if (m) {
         const start = Number(m[1]);
         const count = m[2] === undefined ? 1 : Number(m[2]);
         for (let i = 0; i < count; i++) cur.addedLines.add(start + i);
-        newLine = start;
+        inHunk = true;
       }
     }
   }
-  void newLine;
   if (cur) changes.push(cur);
   for (const c of changes) {
-    if (!c.path) c.path = c.oldPath ?? '';
+    if (!c.path) c.path = c.oldPath ?? hdrPath.get(c) ?? '';
   }
   return changes.filter((c) => c.path);
 }

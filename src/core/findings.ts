@@ -43,3 +43,19 @@ export function makeFinding(p: {
     docsUrl: docsUrl(p.ruleId), onChangedLine: true, fingerprint: sha(`${p.ruleId}|${p.file}|${p.anchor}|${p.occurrence ?? 0}`),
   };
 }
+
+export interface Summary {
+  total: number;
+  errors: number;
+  warnings: number;
+  notes: number;
+  failed: boolean;
+}
+
+export function summarize(findings: Finding[], failOn: 'error' | 'warning' | 'none'): Summary {
+  const errors = findings.filter((f) => f.severity === 'error').length;
+  const warnings = findings.filter((f) => f.severity === 'warning').length;
+  const notes = findings.filter((f) => f.severity === 'note').length;
+  const failed = failOn === 'error' ? errors > 0 : failOn === 'warning' ? errors + warnings > 0 : false;
+  return { total: findings.length, errors, warnings, notes, failed };
+}

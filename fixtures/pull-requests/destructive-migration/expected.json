@@ -1,0 +1,1 @@
+{"findings":[{"ruleId":"PS602","file":"migrations/002_cleanup.sql","line":2},{"ruleId":"PS603","file":"migrations/002_cleanup.sql","line":3},{"ruleId":"PS602","file":"migrations/002_cleanup.sql","line":4}]}
