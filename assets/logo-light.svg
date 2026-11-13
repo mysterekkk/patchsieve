@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 160" role="img" aria-labelledby="t d">
+  <title id="t">PatchSieve</title>
+  <desc id="d">A sieve funnel filtering code lines; clean lines pass through in teal. Light variant.</desc>
+  <defs>
+    <clipPath id="funnel"><path d="M24 34h112L92 90v34l-24 10V90z"/></clipPath>
+  </defs>
+  <rect width="640" height="160" rx="24" fill="#f5f4ff" stroke="#d9d5fb" stroke-width="2"/>
+  <g transform="translate(20 6)">
+    <path d="M24 34h112L92 90v34l-24 10V90z" fill="#e4e1fb" stroke="#5b4bd6" stroke-width="4" stroke-linejoin="round"/>
+    <g clip-path="url(#funnel)" stroke="#5b4bd6" stroke-width="3" stroke-linecap="round" opacity=".85">
+      <path d="M40 48h80M50 62h60M60 76h40"/>
+    </g>
+    <g fill="#0d9488">
+      <rect x="70" y="128" width="20" height="5" rx="2.5"/>
+      <rect x="64" y="138" width="32" height="5" rx="2.5"/>
+    </g>
+    <g fill="#dc2626" opacity=".9">
+      <rect x="2" y="44" width="16" height="5" rx="2.5" transform="rotate(-18 10 46)"/>
+      <rect x="140" y="52" width="16" height="5" rx="2.5" transform="rotate(16 148 54)"/>
+    </g>
+  </g>
+  <text x="200" y="88" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif" font-size="56" font-weight="700" fill="#0b1437" letter-spacing="-1">Patch<tspan fill="#0d9488">Sieve</tspan></text>
+  <text x="203" y="122" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif" font-size="20" fill="#4b3fa8">Catch what coding agents miss.</text>
+</svg>

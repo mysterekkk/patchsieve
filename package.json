@@ -1,6 +1,6 @@
 {
   "name": "patchsieve",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Deterministic pull request quality gate for AI-generated and human-written code. Catch what coding agents miss.",
   "type": "module",
   "license": "MIT",

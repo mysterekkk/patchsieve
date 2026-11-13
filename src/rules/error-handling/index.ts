@@ -6,13 +6,12 @@ import { at } from '../helpers.ts';
 const DOCS = 'docs/rules.md';
 void DOCS;
 
+/**
+ * Only a literally empty block body counts (`() => {}`, `function () {}`).
+ * `() => undefined` / `() => null` are an explicit, deliberate "ignore" idiom and are not reported.
+ */
 function isEmptyBody(fn: ts.Node): boolean {
-  if (ts.isArrowFunction(fn) || ts.isFunctionExpression(fn)) {
-    if (ts.isBlock(fn.body)) return fn.body.statements.length === 0;
-    // `() => undefined` / `() => void 0` / `() => null`
-    const b = unwrapExpr(fn.body as ts.Expression);
-    return b.kind === ts.SyntaxKind.NullKeyword || (ts.isIdentifier(b) && b.text === 'undefined') || ts.isVoidExpression(b);
-  }
+  if (ts.isArrowFunction(fn) || ts.isFunctionExpression(fn)) return ts.isBlock(fn.body) && fn.body.statements.length === 0;
   return false;
 }
 
@@ -66,7 +65,7 @@ export const errorHandlingRules: Rule[] = [
         if (!handler || !(ts.isArrowFunction(handler) || ts.isFunctionExpression(handler))) return;
         if (!isEmptyBody(handler)) return;
         if (ts.isBlock(handler.body) && blockHasComment(sf, handler.body)) return;
-        out.push(at(sf, handler, 'This promise rejection handler is empty, so failures are silently ignored.', `.${name}() receives a function with an empty body and no comment`, { anchor: `${name}(empty)` }));
+        out.push(at(sf, handler, 'This promise rejection handler is empty, so failures are silently ignored.', `.${name}() receives a function with an empty body and no comment`, { anchor: `${name}(empty)`, ...(ctx.file.kind === 'test' ? { severity: 'note' as const, confidence: 'medium' as const } : {}) }));
       });
       return out;
     },

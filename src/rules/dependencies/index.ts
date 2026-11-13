@@ -230,7 +230,12 @@ export const dependencyRules: Rule[] = [
         let why: string | undefined;
         let confidence: RawFinding['confidence'] = 'medium';
         let severity: RawFinding['severity'];
-        if (r === '' || r === '*' || r === 'latest' || r === 'x') why = `unpinned range "${r}" accepts any future version`;
+        const own = typeof json.name === 'string' ? json.name : '';
+        const sameScope = own.startsWith('@') && e.name.startsWith(`${own.slice(0, own.indexOf('/'))}/`);
+        // "*" between packages of the same npm scope is the usual way to point at a sibling workspace package.
+        if (r === '' || r === '*' || r === 'latest' || r === 'x') {
+          if (!sameScope) why = `unpinned range "${r}" accepts any future version`;
+        }
         else if (/^http:\/\//i.test(r) || /^git:\/\//i.test(r)) { why = 'insecure (unencrypted) URL reference'; severity = 'error'; confidence = 'high'; }
         else if (/^(git\+\w+:\/\/|github:|gitlab:|bitbucket:|[\w.-]+\/[\w.-]+)/.test(r) && !/#([0-9a-f]{40}|v?\d+\.\d+\.\d+.*|semver:.*)$/i.test(r) && !r.startsWith('npm:')) why = 'git dependency without a pinned commit or version tag';
         else if (/^(file|link|portal):(\/|[A-Za-z]:|~)/.test(r)) why = 'absolute filesystem path reference is not portable';

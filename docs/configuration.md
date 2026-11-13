@@ -35,7 +35,7 @@ registry:
   timeoutMs: 5000
 ```
 
-Built-in ignores: `node_modules`, `dist`, `build`, `coverage`, `generated`, `.next`.
+Built-in ignores: `node_modules`, `vendor`, `dist`, `build`, `coverage`, `generated`, `.next`, `*.min.js`, `*.min.mjs`, `*.bundle.js`, `*.d.ts`.
 
 ## Precedence (low → high)
 1. Built-in defaults

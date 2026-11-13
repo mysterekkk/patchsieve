@@ -66,6 +66,10 @@ describe('PS103 suspicious references', () => {
     const ok = manifest({ a: '^1.2.3', b: 'npm:left-pad@^1.0.0', c: 'github:someone/repo#0123456789abcdef0123456789abcdef01234567', d: 'file:../shared', e: 'workspace:*' });
     expect(run('PS103', 'package.json', ok, { files: { 'pnpm-workspace.yaml': 'packages:\n  - "*"\n' } })).toEqual([]);
   });
+  it('does not flag "*" between packages of the same npm scope (sibling workspace packages)', () => {
+    const text = JSON.stringify({ name: '@acme/web', dependencies: { '@acme/core': '*', '@other/lib': '*' } }, null, 2);
+    expect(lines(run('PS103', 'package.json', text, {}))).toEqual([5]);
+  });
   it('flags only changed dependencies when a base exists', () => {
     const f = run('PS103', 'package.json', manifest({ a: '*', b: '*' }), { baseFiles: { 'package.json': manifest({ a: '*' }) } });
     expect(lines(f)).toEqual([5]);

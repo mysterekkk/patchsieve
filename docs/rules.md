@@ -52,7 +52,7 @@ The requested range in the manifest differs from the range the lockfile recorded
 
 <a id="ps103"></a>
 ## PS103 — Suspicious dependency reference
-`*`/`latest`/empty ranges, `http://`/`git://` URLs (error), git dependencies without a commit/tag, absolute `file:` paths, and `workspace:` use without any workspace configuration. Registry ranges, aliases (`npm:`), relative `file:`/`link:` and pinned git refs are accepted.
+`*`/`latest`/empty ranges, `http://`/`git://` URLs (error), git dependencies without a commit/tag, absolute `file:` paths, and `workspace:` use without any workspace configuration. Registry ranges, aliases (`npm:`), relative `file:`/`link:` and pinned git refs are accepted. `"*"` between packages of the same npm scope (e.g. `@acme/web` depending on `@acme/core`) is treated as a sibling-workspace reference and is not reported.
 
 <a id="ps104"></a>
 ## PS104 — Unverified new package (opt-in)
@@ -68,7 +68,7 @@ Not flagged: a catch containing any statement or any comment (e.g. `// best effo
 
 <a id="ps202"></a>
 ## PS202 — Silently swallowed promise rejection
-`p.catch(() => {})`, `.catch(function () {})`, `.then(ok, () => undefined)`. A comment inside the handler counts as an explanation.
+`p.catch(() => {})`, `.catch(function () {})`, `.then(ok, () => {})`: handlers whose body is literally empty. A comment inside the handler counts as an explanation. An explicit `() => undefined` / `() => null` is a deliberate "ignore" idiom and is **not** reported. In test files the finding is a `note` (teardown code often ignores failures on purpose).
 
 <a id="ps203"></a>
 ## PS203 — Error swallowed without handling

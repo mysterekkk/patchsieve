@@ -20,8 +20,16 @@ describe('PS201 empty catch', () => {
 
 describe('PS202 swallowed rejection', () => {
   it('flags empty .catch handlers', () => {
-    const f = run('PS202', 'src/a.ts', 'save().catch(() => {});\nsave().catch(function () {});\nsave().then(ok, () => undefined);');
+    const f = run('PS202', 'src/a.ts', 'save().catch(() => {});\nsave().catch(function () {});\nsave().then(ok, () => {});');
     expect(lines(f)).toEqual([1, 2, 3]);
+  });
+  it('treats an explicit `() => undefined` / `() => null` as a deliberate ignore, not a finding', () => {
+    expect(run('PS202', 'src/a.ts', 'save().catch(() => undefined);\nsave().catch(() => null);\nsave().catch(() => void 0);')).toEqual([]);
+  });
+  it('reports empty handlers in test files as low-confidence notes (teardown noise)', () => {
+    const f = run('PS202', 'tests/a.test.ts', 'afterAll(async () => { await cleanup().catch(() => {}); });');
+    expect(f).toHaveLength(1);
+    expect(f[0]).toMatchObject({ severity: 'note', confidence: 'medium' });
   });
   it('does not flag handlers that do something', () => {
     expect(run('PS202', 'src/a.ts', 'save().catch((e) => log(e));\nsave().catch(() => { /* ignore: optional */ });')).toEqual([]);

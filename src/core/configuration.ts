@@ -35,7 +35,7 @@ export const configSchema = z
 export type Config = z.infer<typeof configSchema>;
 export type RuleSetting = { severity: Severity | 'off' | undefined; options: Record<string, unknown> };
 
-export const DEFAULT_IGNORES = ['**/node_modules/**', '**/dist/**', '**/build/**', '**/coverage/**', '**/generated/**', '**/.next/**'];
+export const DEFAULT_IGNORES = ['**/node_modules/**', '**/vendor/**', '**/dist/**', '**/build/**', '**/coverage/**', '**/generated/**', '**/.next/**', '**/*.min.js', '**/*.min.mjs', '**/*.bundle.js', '**/*.d.ts'];
 
 export function defaultConfig(): Config {
   return configSchema.parse({ version: 1 });

@@ -2,6 +2,17 @@
 
 All notable changes are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/) and the project uses [Semantic Versioning](https://semver.org/). Rule IDs are stable: changing what an ID means is a breaking change and will be called out here.
 
+## [0.1.1] - 2026-11-13
+
+### Fixed
+- Default ignores now include `vendor/`, `*.min.js`, `*.min.mjs`, `*.bundle.js` and `*.d.ts`. Scanning a repository with vendored dependencies no longer produces noise or blocking "could not be analyzed" results.
+- PS202 no longer reports an explicit `() => undefined` / `() => null` handler (a deliberate ignore idiom); only literally empty handlers are reported, and as a `note` in test files.
+- PS103 no longer reports `"*"` between packages of the same npm scope (sibling workspace packages).
+- The package README on npm now shows images (absolute URLs) and ships a light logo variant.
+
+### Added
+- `examples/local-cli`.
+
 ## [0.1.0] - 2026-11-13
 
 First public release.

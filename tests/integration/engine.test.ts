@@ -59,6 +59,11 @@ describe('diff-first behaviour', () => {
     expect(r.findings.map((f) => f.file)).toEqual(['src/one.ts']);
     expect(r.skipped).toEqual(expect.arrayContaining([{ path: 'src/two.ts', reason: 'exceeds max-files (1)', blocking: true }]));
   });
+  it('ignores vendor/, minified and declaration files by default', async () => {
+    const r = await scan({ 'a.txt': 'x' }, { 'a.txt': 'x', 'vendor/lib/a.js': EMPTY_CATCH, 'public/app.min.js': EMPTY_CATCH, 'types/x.d.ts': EMPTY_CATCH, 'src/real.ts': EMPTY_CATCH });
+    expect(r.findings.map((f) => f.file)).toEqual(['src/real.ts']);
+    expect(r.skipped).toEqual([]);
+  });
   it('production-only rules do not fire in test files and vice versa', async () => {
     const r = await scan({ 'a.txt': 'x' }, { 'a.txt': 'x', 'src/impl.ts': "it.only('x', () => {});\n", 'tests/impl.test.ts': "throw new Error('Not implemented');\n" });
     expect(r.findings).toEqual([]);

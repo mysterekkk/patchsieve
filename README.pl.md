@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="PatchSieve" width="520">
+  <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/mysterekkk/patchsieve/main/assets/logo.svg"><img src="https://raw.githubusercontent.com/mysterekkk/patchsieve/main/assets/logo-light.svg" alt="PatchSieve" width="520"></picture>
 </p>
 
 <p align="center">
@@ -71,7 +71,7 @@ Pełny opis każdej reguły, także tego, czego celowo **nie** flaguje: [docs/ru
 
 Raport z konsoli wygenerowany przez zbudowane CLI na fixture `fake-test` (obraz dokumentacyjny z prawdziwego wyjścia programu, nie zrzut ekranu z GitHub):
 
-<p align="center"><img src="assets/report-preview.svg" alt="Raport PatchSieve na przykładowym PR" width="860"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/mysterekkk/patchsieve/main/assets/report-preview.svg" alt="Raport PatchSieve na przykładowym PR" width="860"></p>
 
 ## Lokalne CLI
 
