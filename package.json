@@ -1,0 +1,40 @@
+{
+  "name": "patchsieve",
+  "version": "0.1.0",
+  "description": "Deterministic pull request quality gate for AI-generated and human-written code. Catch what coding agents miss.",
+  "type": "module",
+  "license": "MIT",
+  "author": "LuroWeb",
+  "bin": {
+    "patchsieve": "dist/cli.js"
+  },
+  "files": [
+    "dist/cli.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run lint && npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "@actions/core": "^3.0.1",
+    "typescript": "^6.0.3",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.19.2",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.14.0",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^5.1.0"
+  }
+}
